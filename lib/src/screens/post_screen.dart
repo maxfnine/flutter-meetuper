@@ -1,49 +1,72 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
-import 'dart:convert';
 import '../widgets/bottom_navigation.dart';
+import '../models/post.dart';
+import '../services/post_api_provider.dart';
+import 'package:faker/faker.dart';
 
 class PostScreen extends StatefulWidget{
+  final PostApiProvider _postApiProvider = PostApiProvider();
   @override
   _PostScreenState createState()=>_PostScreenState();
 
 }
 
 class _PostScreenState extends State<PostScreen>{
-  List<dynamic> _posts=[];
+  List<Post> _posts=[];
+
   @override
   void initState(){
     super.initState();
-    get('https://jsonplaceholder.typicode.com/posts').then((response)
-    {
-      final  posts = json.decode(response.body);
+    _fetchPosts();
+  }
+
+  void _fetchPosts() async{
+    List<Post> posts = await widget._postApiProvider.fetchPosts();
+    setState(() {
       print(posts);
-      setState(() {
-        _posts=posts;
-      });
+      _posts=posts;
+    });
+  }
+
+  _addPost(){
+    final id=faker.randomGenerator.integer(9999);
+    final title=faker.food.dish();
+    final body=faker.food.cuisine();
+    final newPost = Post(id: id,title: title,body: body);
+    setState(() {
+      _posts.add(newPost);
     });
   }
 
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'Welcome in Posts Screen',
-              textDirection: TextDirection.ltr,
-              style: TextStyle(fontSize: 15.0),
-            ),
+    return _PostList(posts: _posts,createPost: _addPost,);
+  }
+}
 
-          ],
-        ),
-      ),
+
+class _PostList extends StatelessWidget {
+  final List<dynamic> _posts;
+  final Function() createPost;
+
+  _PostList({@required List<Post> posts,@required Function() createPost}):_posts=posts,this.createPost=createPost;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: ListView.builder(itemCount: _posts.length*2,
+          itemBuilder: (BuildContext context,int i){
+
+            if(i.isOdd){
+              return Divider();
+            }
+            final index=i~/2;
+            return new ListTile(title: Text(_posts[index].title),subtitle: Text(_posts[index].body),);
+          }),
       bottomNavigationBar: BottomNavigation(),
       floatingActionButton: FloatingActionButton(
-        onPressed:()=>{},
+        onPressed:createPost,
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ),
