@@ -1,80 +1,84 @@
 import 'package:flutter/material.dart';
-import '../widgets/bottom_navigation.dart';
-import '../models/post.dart';
-import '../services/post_api_provider.dart';
-import 'package:faker/faker.dart';
+import 'package:flutter_meetuper/src/models/post.dart';
+import 'package:flutter_meetuper/src/widgets/bottom_navigation.dart';
+import 'package:scoped_model/scoped_model.dart';
+import '../scoped_model/post_model.dart';
 
-class PostScreen extends StatefulWidget{
-  final PostApiProvider _postApiProvider = PostApiProvider();
+class PostScreen extends StatefulWidget {
+
+
   @override
-  _PostScreenState createState()=>_PostScreenState();
-
+  _PostScreenState createState() => _PostScreenState();
 }
 
-class _PostScreenState extends State<PostScreen>{
-  List<Post> _posts=[];
-
-  @override
-  void initState(){
-    super.initState();
-    _fetchPosts();
-  }
-
-  void _fetchPosts() async{
-    List<Post> posts = await widget._postApiProvider.fetchPosts();
-    setState(() {
-      print(posts);
-      _posts=posts;
-    });
-  }
-
-  _addPost(){
-    final id=faker.randomGenerator.integer(9999);
-    final title=faker.food.dish();
-    final body=faker.food.cuisine();
-    final newPost = Post(id: id,title: title,body: body);
-    setState(() {
-      _posts.add(newPost);
-    });
-  }
+class _PostScreenState extends State<PostScreen> {
 
 
-  @override
+
   Widget build(BuildContext context) {
-    return _PostList(posts: _posts,createPost: _addPost,);
+    return ScopedModel<PostModel>(
+      model: PostModel(),
+      child: _PostList(),
+    );
+  }
+}
+
+class _InheritedPost extends InheritedWidget {
+  final Widget child;
+  final List<Post> posts;
+  final Function createPost;
+
+  _InheritedPost({@required this.child,
+    @required this.posts,
+    @required this.createPost}) : super(child: child);
+
+  @override
+  bool updateShouldNotify(InheritedWidget oldWidget) => true;
+
+  static _InheritedPost of(BuildContext context) {
+    return (context.inheritFromWidgetOfExactType(_InheritedPost) as _InheritedPost);
   }
 }
 
 
 class _PostList extends StatelessWidget {
-  final List<dynamic> _posts;
-  final Function() createPost;
 
-  _PostList({@required List<Post> posts,@required Function() createPost}):_posts=posts,this.createPost=createPost;
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ListView.builder(itemCount: _posts.length*2,
-          itemBuilder: (BuildContext context,int i){
-
-            if(i.isOdd){
+    return ScopedModelDescendant<PostModel>(builder: (context,_,model){
+      final posts=model.posts;
+      return Scaffold(
+        body: ListView.builder(
+          itemCount: posts.length * 2,
+          itemBuilder: (BuildContext context, int i) {
+            if (i.isOdd) {
               return Divider();
             }
-            final index=i~/2;
-            return new ListTile(title: Text(_posts[index].title),subtitle: Text(_posts[index].body),);
-          }),
-      bottomNavigationBar: BottomNavigation(),
-      floatingActionButton: FloatingActionButton(
-        onPressed:createPost,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ),
-      appBar: AppBar(
-        title: Text(
-          'Posts',
+
+            final index = i ~/ 2;
+
+            return ListTile(
+                title: Text(posts[index].title),
+                subtitle: Text(posts[index].body)
+            );
+          },
         ),
-      ),
+        bottomNavigationBar: BottomNavigation(),
+        floatingActionButton: _PostButton(),
+        appBar: AppBar(title: Text(model.testingState)),
+      );
+    },);
+
+  }
+}
+
+class _PostButton extends StatelessWidget {
+
+  Widget build(BuildContext context) {
+    final PostModel postModel  = ScopedModel.of<PostModel>(context,rebuildOnChange: true);
+    return FloatingActionButton(
+        onPressed: postModel.addPost,
+        tooltip: 'Add Post',
+        child: Icon(Icons.add)
     );
   }
 }
