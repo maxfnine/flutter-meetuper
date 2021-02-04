@@ -1,53 +1,105 @@
 import 'package:flutter_meetuper/src/models/forms.dart';
 import 'package:flutter_meetuper/src/models/user.dart';
+import 'package:flutter_meetuper/src/utils/jwt.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io' show Platform;
 
-class AuthApiService{
-  static final AuthApiService _singleton = AuthApiService._internal();
-  final String url=Platform.isIOS?'http://localhost:3001/api/v1':'http://10.100.102.21:3001/api/v1';
-  String _token;
+import 'package:shared_preferences/shared_preferences.dart';
+
+
+class AuthApiService {
+  final String url = Platform.isIOS
+      ? 'http://localhost:3001/api/v1'
+      : 'http://10.100.102.21:3001/api/v1';
+  String _token = '';
   User _authUser;
 
-  set authUser(Map<String,dynamic> userData){
-    _authUser=User.fromJSON(userData);
+  static final AuthApiService _singleton = AuthApiService._internal();
+
+  factory AuthApiService() {
+    return _singleton;
   }
 
-  get authUser=>_authUser;
+  AuthApiService._internal();
 
-  bool _saveToken(String token){
-    if(token!=null){
-      _token=token;
+  set authUser(Map<String, dynamic> value) {
+    _authUser = User.fromJSON(value);
+  }
+
+  get authUser => _authUser;
+
+  Future<String> get token async {
+    if (_token.isNotEmpty) {
+      return _token;
+    } else {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      return prefs.getString('token');
+    }
+  }
+
+  Future<bool> _persistToken(token) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.setString('token', token);
+  }
+
+  Future<bool> _saveToken(String token) async {
+    if (token != null) {
+      await _persistToken(token);
+      _token = token;
       return true;
     }
 
     return false;
   }
 
-  bool isAuthenticated(){
-    if(_token!=null && _token.isNotEmpty){
-      return true;
-    }else{
+  Future<bool> isAuthenticated() async {
+    final token = await this.token;
+    if (token!=null && token.isNotEmpty) {
+      final decodedToken = decode(token);
+      final bool isValidToken = decodedToken['exp'] * 1000 > DateTime.now().millisecond;
+
+      if (isValidToken) {
+        authUser = decodedToken;
+      }
+
+      return isValidToken;
+    }
+
+    return false;
+  }
+
+  Future<void> _removeAuthData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    _token='';
+    _authUser=null;
+  }
+
+  Future<bool> logout() async{
+    try{
+     await _removeAuthData();
+     return true;
+    }
+    catch(error){
+      print(error);
       return false;
     }
   }
 
-  AuthApiService._internal();
-  factory AuthApiService(){
-    return _singleton;
-  }
-
-  Future<Map<String,dynamic>> login(LoginFormData loginData) async {
+  Future<Map<String, dynamic>> login(LoginFormData loginData) async {
     final body = json.encode(loginData.toJSON());
-    final response = await http.post('$url/users/login',body: body,headers: {'Content-Type':'application/json'});
-    final parsedData  = Map<String,dynamic>.from(json.decode(response.body));
-    if(response.statusCode==200){
-      _saveToken(parsedData['token']);
-      authUser=parsedData;
-      print(_authUser);
+    print(body);
+    final res = await http.post('$url/users/login',
+        headers: {"Content-Type": "application/json"},
+        body: body);
+    final parsedData = Map<String, dynamic>.from(json.decode(res.body));
+
+    if (res.statusCode == 200) {
+      await _saveToken(parsedData['token']);
+      authUser = parsedData;
       return parsedData;
-    }else{
+    } else {
       return Future.error(parsedData);
     }
   }

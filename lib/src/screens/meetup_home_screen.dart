@@ -1,6 +1,5 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_meetuper/src/models/user.dart';
+import 'package:flutter_meetuper/src/screens/login_screen.dart';
 import 'package:flutter_meetuper/src/screens/meetup_detail_screen.dart';
 import '../models/meetup.dart';
 import '../services/meetup_api_service.dart';
@@ -32,7 +31,6 @@ class _MeetupHomeScreenState extends State<MeetupHomeScreen> {
   _fetchMeetups() async {
     List<Meetup> meetups = await widget._meetupApiService.fetchMeetups();
     setState(() {
-      print(meetups);
       _meetups = meetups;
     });
   }
@@ -62,34 +60,45 @@ class _MeetupHomeScreenState extends State<MeetupHomeScreen> {
 class _MeetupTitle extends StatelessWidget {
   final AuthApiService _authApiService = AuthApiService();
 
-  _buildUserWelcome() {
-    final isAuth = _authApiService.isAuthenticated();
-    if (isAuth) {
-      final User user = _authApiService.authUser;
-      return Container(
-        margin: EdgeInsets.only(
-          top: 10.0,
-        ),
-        child: Row(
-          children: <Widget>[
-            user.avatar != null
-                ? CircleAvatar(
-                    backgroundImage: NetworkImage(user.avatar),
-                  )
-                : Container(
-                    width: 0.0,
-                    height: 0.0,
-                  ),
-            Text('Welcome ${user.username}'),
-          ],
-        ),
-      );
-    } else {
-      return Container(
-        width: 0.0,
-        height: 0.0,
-      );
-    }
+  Widget _buildUserWelcome(){
+    return FutureBuilder<bool>(future:_authApiService.isAuthenticated(),builder: (BuildContext context,AsyncSnapshot<bool> snapshot){
+      if(snapshot.hasData && snapshot.data){
+        final user  =_authApiService.authUser;
+        return Container(
+          margin: EdgeInsets.only(
+            top: 10.0,
+          ),
+          child: Row(
+            children: <Widget>[
+              user.avatar != null
+                  ? CircleAvatar(
+                backgroundImage: NetworkImage(user.avatar),
+              )
+                  : Container(
+                width: 0.0,
+                height: 0.0,
+              ),
+              Text('Welcome ${user.username}'),
+              Spacer(),
+              GestureDetector(
+                child: Text(
+                  'Logout',
+                  style: TextStyle(color: Theme.of(context).primaryColor),
+                ),
+                onTap: (){
+                  _authApiService.logout().then((value) => Navigator.pushNamedAndRemoveUntil(context, LoginScreen.route, (route) => false),);
+                  },
+              )
+            ],
+          ),
+        );
+      }else{
+        return Container(
+          width: 0.0,
+          height: 0.0,
+        );
+      }
+    });
   }
 
   @override
