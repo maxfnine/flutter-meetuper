@@ -6,8 +6,10 @@ import '../utils/validators.dart';
 import '../models/forms.dart';
 
 class LoginScreen extends StatefulWidget {
+  final String message;
   static final String route = '/login';
   final AuthApiService _authApiService = AuthApiService();
+  LoginScreen({this.message});
 
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -27,6 +29,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_)=>_checkForMessage());
+  }
+
+  void _checkForMessage(){
+      if(widget.message!=null && widget.message.isNotEmpty){
+        Scaffold.of(_scaffoldContext).showSnackBar(SnackBar(content: Text(widget.message),),);
+      }
   }
 
   @override
