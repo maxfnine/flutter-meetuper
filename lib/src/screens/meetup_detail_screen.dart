@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_meetuper/src/blocs/bloc_provider.dart';
+import 'package:flutter_meetuper/src/blocs/meetup_bloc.dart';
 import 'package:flutter_meetuper/src/services/meetup_api_service.dart';
 import '../widgets/bottom_navigation.dart';
 import '../models/meetup.dart';
@@ -15,20 +17,11 @@ class MeetupDetailScreen extends StatefulWidget {
 }
 
 class _MeetupDetailScreenState extends State<MeetupDetailScreen> {
-  Meetup _meetup;
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchMeetup();
-  }
-
-  void _fetchMeetup() async {
-    Meetup meetup =
-        await widget._meetupApiService.fetchMeetupById(widget.meetupId);
-    setState(() {
-      _meetup = meetup;
-    });
+  void didChangeDependencies(){
+    super.didChangeDependencies();
+    final MeetupBloc meetupBloc = BlocProvider.of<MeetupBloc>(context);
+    meetupBloc.fetchMeetup(widget.meetupId);
   }
 
   @override
@@ -37,16 +30,22 @@ class _MeetupDetailScreenState extends State<MeetupDetailScreen> {
       appBar: AppBar(
         title: Text('Meetup Details'),
       ),
-      body: _meetup != null
-          ? ListView(children: [
+      body:
+      StreamBuilder(
+        stream: BlocProvider.of<MeetupBloc>(context).meetup,
+
+        builder: (BuildContext context,AsyncSnapshot<Meetup> snapshot){
+          if(snapshot.hasData){
+            final Meetup meetup=snapshot.data;
+            return ListView(children: [
               HeaderSection(
-                _meetup,
+                meetup,
               ),
               TitleSection(
-                _meetup,
+                meetup,
               ),
               AdditionalInfoSectionSection(
-                _meetup,
+                meetup,
               ),
               Padding(
                 padding: EdgeInsets.all(32.0),
@@ -56,11 +55,15 @@ class _MeetupDetailScreenState extends State<MeetupDetailScreen> {
                       'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer purus leo, vulputate pellentesque augue eleifend, semper porta orci. Quisque vestibulum vitae nisl in maximus. Donec varius rutrum risus. Mauris quis lectus suscipit, viverra urna ut, euismod nunc. Praesent magna mauris, sagittis sed dolor vel, accumsan accumsan purus. Vivamus molestie tempus sem, eu condimentum lorem scelerisque sed. Phasellus metus enim, tristique vitae tempor semper, lacinia ac libero. Vivamus congue ex id turpis fringilla fermentum. In tristique vehicula aliquet.'),
                 ),
               ),
-            ])
-          : Container(
-              width: 0.0,
-              height: 0.0,
-            ),
+            ]);
+          }else{
+          return Container(
+          width: 0.0,
+          height: 0.0,
+          );
+          }
+        },
+      ),
       bottomNavigationBar: BottomNavigation(),
     );
   }

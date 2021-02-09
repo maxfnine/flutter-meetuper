@@ -1,10 +1,11 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_meetuper/src/blocs/bloc_provider.dart';
 import '../widgets/bottom_navigation.dart';
+import '../blocs/counter_bloc.dart';
 
 class CounterHomeScreen extends StatefulWidget {
   final String _title;
+
 
   CounterHomeScreen({String title}) : _title = title;
 
@@ -13,32 +14,17 @@ class CounterHomeScreen extends StatefulWidget {
 }
 
 class CounterHomeScreenState extends State<CounterHomeScreen> {
-  final StreamController<int> _streamController =
-      StreamController<int>.broadcast();
-  final StreamController<int> _counterController =
-  StreamController<int>.broadcast();
-
-  int _counter = 0;
-
-  void initState() {
-    super.initState();
-    _streamController.stream
-        .listen((number) {
-      _counter=_counter+number;
-      _counterController.sink.add(_counter);
-    });
+  CounterBloc counterBloc;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    counterBloc=BlocProvider.of<CounterBloc>(context);
   }
-@override
-void dispose(){
-    super.dispose();
-    _streamController.close();
-    _counterController.close();
-}
+
+
+
   void _increment() {
-    // setState(() {
-    //   _counter++;
-    // });
-    _streamController.sink.add(10);
+    counterBloc.increment(15);
   }
 
   @override
@@ -53,8 +39,8 @@ void dispose(){
               textDirection: TextDirection.ltr,
               style: TextStyle(fontSize: 15.0),
             ),
-            StreamBuilder(stream: _counterController.stream,
-            initialData: _counter,
+            StreamBuilder(
+              stream: counterBloc.counterStream,
             builder: (BuildContext context,AsyncSnapshot<int> snapshot){
               if(snapshot.hasData) {
                 return Text(
@@ -71,8 +57,9 @@ void dispose(){
               }
             },),
             RaisedButton(
-              child:  StreamBuilder(stream: _counterController.stream,
-                initialData: _counter,
+              child:  StreamBuilder(
+                stream: counterBloc.counterStream,
+
                 builder: (BuildContext context,AsyncSnapshot<int> snapshot){
                   if(snapshot.hasData) {
                     return Text(
