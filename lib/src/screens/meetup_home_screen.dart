@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_meetuper/src/blocs/auth_bloc/auth_bloc.dart';
 import 'package:flutter_meetuper/src/blocs/meetup_bloc.dart';
 import 'package:flutter_meetuper/src/screens/login_screen.dart';
 import 'package:flutter_meetuper/src/screens/meetup_detail_screen.dart';
@@ -14,18 +15,19 @@ class MeetupDetailArguments {
 
 class MeetupHomeScreen extends StatefulWidget {
   static const String route = '/home';
-
-
+  
   @override
   _MeetupHomeScreenState createState() => _MeetupHomeScreenState();
 }
 
 class _MeetupHomeScreenState extends State<MeetupHomeScreen> {
+  AuthBloc authBloc;
 
-  void didChangeDependencies(){
-    super.didChangeDependencies();
+  void initState(){
     final MeetupBloc meetupBloc = BlocProvider.of<MeetupBloc>(context);
     meetupBloc.fetchMeetups();
+    authBloc = BlocProvider.of<AuthBloc>(context);
+    super.initState();
   }
 
 
@@ -38,7 +40,7 @@ class _MeetupHomeScreenState extends State<MeetupHomeScreen> {
       ),
       body: Column(
         children: [
-          _MeetupTitle(),
+          _MeetupTitle(authBloc:authBloc),
           _MeetupList(),
         ],
       ),
@@ -52,6 +54,8 @@ class _MeetupHomeScreenState extends State<MeetupHomeScreen> {
 
 class _MeetupTitle extends StatelessWidget {
   final AuthApiService _authApiService = AuthApiService();
+  final AuthBloc authBloc;
+  _MeetupTitle({@required this.authBloc});
 
   Widget _buildUserWelcome(){
     return FutureBuilder<bool>(future:_authApiService.isAuthenticated(),builder: (BuildContext context,AsyncSnapshot<bool> snapshot){
@@ -79,7 +83,8 @@ class _MeetupTitle extends StatelessWidget {
                   style: TextStyle(color: Theme.of(context).primaryColor),
                 ),
                 onTap: (){
-                  _authApiService.logout().then((value) => Navigator.pushNamedAndRemoveUntil(context, LoginScreen.route, (route) => false),);
+                  _authApiService.logout().then((isLogout) =>authBloc.dispatch(LoggedOut()));
+                  // _authApiService.logout().then((value) => Navigator.pushNamedAndRemoveUntil(context, LoginScreen.route, (route) => false),);
                   },
               )
             ],

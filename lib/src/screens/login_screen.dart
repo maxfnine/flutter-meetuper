@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_meetuper/src/blocs/auth_bloc/auth_bloc.dart';
+import 'package:flutter_meetuper/src/blocs/bloc_provider.dart';
 import 'package:flutter_meetuper/src/screens/meetup_home_screen.dart';
 import 'package:flutter_meetuper/src/screens/register_screen.dart';
 import '../services/auth_api_service.dart';
@@ -20,6 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
       GlobalKey<FormFieldState<String>>();
   final GlobalKey<FormFieldState<String>> _emailKey =
       GlobalKey<FormFieldState<String>>();
+  AuthBloc _authBloc;
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   LoginFormData _loginData = LoginFormData();
@@ -28,8 +31,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void initState() {
-    super.initState();
+    _authBloc = BlocProvider.of<AuthBloc>(context);
     WidgetsBinding.instance.addPostFrameCallback((_)=>_checkForMessage());
+    super.initState();
+
   }
 
   void _checkForMessage(){
@@ -46,9 +51,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _login() {
+    _authBloc.dispatch(InitLogging());
     widget._authApiService.login(_loginData).then((data) {
-      Navigator.pushNamed(context, MeetupHomeScreen.route);
+      _authBloc.dispatch(LoggedIn());
     }).catchError((error) {
+      _authBloc.dispatch(LoggedOut());
       Scaffold.of(_scaffoldContext).showSnackBar(
         SnackBar(
           content: Text(error['errors']['message']),

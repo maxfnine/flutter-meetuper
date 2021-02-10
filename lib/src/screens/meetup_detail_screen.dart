@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_meetuper/src/blocs/bloc_provider.dart';
 import 'package:flutter_meetuper/src/blocs/meetup_bloc.dart';
+import 'package:flutter_meetuper/src/services/auth_api_service.dart';
 import 'package:flutter_meetuper/src/services/meetup_api_service.dart';
 import '../widgets/bottom_navigation.dart';
 import '../models/meetup.dart';
@@ -65,9 +66,45 @@ class _MeetupDetailScreenState extends State<MeetupDetailScreen> {
         },
       ),
       bottomNavigationBar: BottomNavigation(),
+      floatingActionButton: _MeetupActionButton(),
     );
   }
 }
+
+class _MeetupActionButton extends StatelessWidget {
+  final AuthApiService _authApiService = AuthApiService();
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+        future: _authApiService.isAuthenticated(),
+        builder: (BuildContext context,AsyncSnapshot<bool> snapshot){
+
+          if(snapshot.hasData && snapshot.data){
+            final bool isMember=true;
+          if(isMember){
+            return FloatingActionButton(
+              onPressed: (){},
+              child: Icon(Icons.cancel),
+              backgroundColor: Colors.red,
+              tooltip: 'Leave Meetup',
+            );
+          }else{
+            return FloatingActionButton(
+              onPressed: (){},
+              child: Icon(Icons.person_add),
+              backgroundColor: Colors.green,
+              tooltip: 'Join Meetup',
+            );
+          }
+
+          }else{
+            return Container(width: 0.0,height: 0.0,);
+          }
+        });
+
+  }
+}
+
 
 class AdditionalInfoSectionSection extends StatelessWidget {
   final Meetup meetup;
