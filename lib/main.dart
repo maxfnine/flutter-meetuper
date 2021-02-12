@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_meetuper/src/blocs/auth_bloc/auth_bloc.dart';
 import 'package:flutter_meetuper/src/blocs/counter_bloc.dart';
 import 'package:flutter_meetuper/src/blocs/meetup_bloc.dart';
+import 'package:flutter_meetuper/src/blocs/user_bloc/user_bloc.dart';
 import 'package:flutter_meetuper/src/models/arguments.dart';
 import 'package:flutter_meetuper/src/screens/counter_home_screen.dart';
 import 'package:flutter_meetuper/src/screens/login_screen.dart';
@@ -47,26 +48,30 @@ class _MeetuperAppState extends State<MeetuperApp> {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home:StreamBuilder<AuthenticationState>(
+      home: StreamBuilder<AuthenticationState>(
         stream: authBloc.authState,
         initialData: AuthenticationUnauthenticated(),
-        builder: (BuildContext context,AsyncSnapshot<AuthenticationState> snapshot){
+        builder: (BuildContext context,
+            AsyncSnapshot<AuthenticationState> snapshot) {
           final AuthenticationState state = snapshot.data;
 
-          if( state is AuthenticationUninitialized){
+          if (state is AuthenticationUninitialized) {
             return SplashScreen();
           }
 
-          if(state is AuthenticationAuthenticated){
-            return BlocProvider<MeetupBloc>(child: MeetupHomeScreen(), bloc: MeetupBloc());
+          if (state is AuthenticationAuthenticated) {
+            return BlocProvider<MeetupBloc>(
+                child: MeetupHomeScreen(), bloc: MeetupBloc());
           }
 
-          if(state is AuthenticationUnauthenticated){
-            final LoginScreenArguments arguments = !state.logout?ModalRoute.of(context).settings.arguments:null;
+          if (state is AuthenticationUnauthenticated) {
+            final LoginScreenArguments arguments = !state.logout
+                ? ModalRoute.of(context).settings.arguments
+                : null;
             return LoginScreen(message: arguments?.message);
           }
 
-          if(state is AuthenticationLoading){
+          if (state is AuthenticationLoading) {
             return LoadingScreen();
           }
         },
@@ -89,9 +94,14 @@ class _MeetuperAppState extends State<MeetuperApp> {
           final MeetupDetailArguments arguments = settings.arguments;
           print(arguments);
           return MaterialPageRoute(
-              builder: (context) => BlocProvider<MeetupBloc>(
-                  bloc: MeetupBloc(),
-                  child: MeetupDetailScreen(meetupId: arguments.id)));
+            builder: (context) => BlocProvider<MeetupBloc>(
+              bloc: MeetupBloc(),
+              child: BlocProvider<UserBloc>(
+                bloc: UserBloc(auth: AuthApiService()),
+                child: MeetupDetailScreen(meetupId: arguments.id),
+              ),
+            ),
+          );
         } else if (settings.name == LoginScreen.route) {
           final LoginScreenArguments arguments = settings.arguments;
           return MaterialPageRoute(
@@ -127,4 +137,3 @@ class LoadingScreen extends StatelessWidget {
     );
   }
 }
-

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_meetuper/src/blocs/bloc_provider.dart';
 import 'package:flutter_meetuper/src/blocs/meetup_bloc.dart';
+import 'package:flutter_meetuper/src/blocs/user_bloc/events.dart';
+import 'package:flutter_meetuper/src/blocs/user_bloc/state.dart';
+import 'package:flutter_meetuper/src/blocs/user_bloc/user_bloc.dart';
 import 'package:flutter_meetuper/src/services/auth_api_service.dart';
 import 'package:flutter_meetuper/src/services/meetup_api_service.dart';
 import '../widgets/bottom_navigation.dart';
@@ -18,77 +21,85 @@ class MeetupDetailScreen extends StatefulWidget {
 }
 
 class _MeetupDetailScreenState extends State<MeetupDetailScreen> {
+  MeetupBloc _meetupBloc;
+  UserBloc _userBloc;
+  void initState(){
+    _meetupBloc = BlocProvider.of<MeetupBloc>(context);
+    _userBloc = BlocProvider.of<UserBloc>(context);
+    _meetupBloc.fetchMeetup(widget.meetupId);
+    _meetupBloc.meetup.listen((meetup){
+      _userBloc.dispatch(CheckUserPermissionsOnMeetup(meetup: meetup));
+    });
+    super.initState();
 
-  void didChangeDependencies(){
-    super.didChangeDependencies();
-    final MeetupBloc meetupBloc = BlocProvider.of<MeetupBloc>(context);
-    meetupBloc.fetchMeetup(widget.meetupId);
+
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Meetup Details'),
-      ),
-      body:
-      StreamBuilder(
-        stream: BlocProvider.of<MeetupBloc>(context).meetup,
-
-        builder: (BuildContext context,AsyncSnapshot<Meetup> snapshot){
-          if(snapshot.hasData){
-            final Meetup meetup=snapshot.data;
-            return ListView(children: [
-              HeaderSection(
-                meetup,
-              ),
-              TitleSection(
-                meetup,
-              ),
-              AdditionalInfoSectionSection(
-                meetup,
-              ),
-              Padding(
-                padding: EdgeInsets.all(32.0),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer purus leo, vulputate pellentesque augue eleifend, semper porta orci. Quisque vestibulum vitae nisl in maximus. Donec varius rutrum risus. Mauris quis lectus suscipit, viverra urna ut, euismod nunc. Praesent magna mauris, sagittis sed dolor vel, accumsan accumsan purus. Vivamus molestie tempus sem, eu condimentum lorem scelerisque sed. Phasellus metus enim, tristique vitae tempor semper, lacinia ac libero. Vivamus congue ex id turpis fringilla fermentum. In tristique vehicula aliquet.'),
-                ),
-              ),
-            ]);
-          }else{
-          return Container(
-          width: 0.0,
-          height: 0.0,
+    return StreamBuilder<UserState>(stream:_userBloc.userState,
+        initialData: UserInitialState(),
+        builder: (BuildContext context,AsyncSnapshot<UserState> snapshot){
+      final UserState userState = snapshot.data;
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Meetup Details'),
+            ),
+            body:
+            StreamBuilder(
+              stream: _meetupBloc.meetup,
+              builder: (BuildContext context,AsyncSnapshot<Meetup> snapshot){
+                if(snapshot.hasData){
+                  final Meetup meetup=snapshot.data;
+                  return ListView(children: [
+                    HeaderSection(
+                      meetup,
+                    ),
+                    TitleSection(
+                      meetup,
+                    ),
+                    AdditionalInfoSectionSection(
+                      meetup,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer purus leo, vulputate pellentesque augue eleifend, semper porta orci. Quisque vestibulum vitae nisl in maximus. Donec varius rutrum risus. Mauris quis lectus suscipit, viverra urna ut, euismod nunc. Praesent magna mauris, sagittis sed dolor vel, accumsan accumsan purus. Vivamus molestie tempus sem, eu condimentum lorem scelerisque sed. Phasellus metus enim, tristique vitae tempor semper, lacinia ac libero. Vivamus congue ex id turpis fringilla fermentum. In tristique vehicula aliquet.'),
+                      ),
+                    ),
+                  ]);
+                }else{
+                  return Container(
+                    width: 0.0,
+                    height: 0.0,
+                  );
+                }
+              },
+            ),
+            bottomNavigationBar: BottomNavigation(),
+            floatingActionButton: _MeetupActionButton(userState: userState,),
           );
-          }
-        },
-      ),
-      bottomNavigationBar: BottomNavigation(),
-      floatingActionButton: _MeetupActionButton(),
-    );
+        });
   }
 }
 
 class _MeetupActionButton extends StatelessWidget {
   final AuthApiService _authApiService = AuthApiService();
+  final UserState userState;
+  _MeetupActionButton({@required this.userState});
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-        future: _authApiService.isAuthenticated(),
-        builder: (BuildContext context,AsyncSnapshot<bool> snapshot){
-
-          if(snapshot.hasData && snapshot.data){
-            final bool isMember=true;
-          if(isMember){
+          if(userState is UserIsMember){
             return FloatingActionButton(
               onPressed: (){},
               child: Icon(Icons.cancel),
               backgroundColor: Colors.red,
               tooltip: 'Leave Meetup',
             );
-          }else{
+          }else if(userState is UserIsNotMember){
             return FloatingActionButton(
               onPressed: (){},
               child: Icon(Icons.person_add),
@@ -96,14 +107,14 @@ class _MeetupActionButton extends StatelessWidget {
               tooltip: 'Join Meetup',
             );
           }
-
-          }else{
+          else{
             return Container(width: 0.0,height: 0.0,);
           }
-        });
+        }
 
-  }
+
 }
+
 
 
 class AdditionalInfoSectionSection extends StatelessWidget {

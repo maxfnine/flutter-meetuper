@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_meetuper/src/blocs/auth_bloc/auth_bloc.dart';
 import 'package:flutter_meetuper/src/blocs/meetup_bloc.dart';
-import 'package:flutter_meetuper/src/screens/login_screen.dart';
 import 'package:flutter_meetuper/src/screens/meetup_detail_screen.dart';
 import '../models/meetup.dart';
 import '../blocs/bloc_provider.dart';
@@ -15,7 +14,7 @@ class MeetupDetailArguments {
 
 class MeetupHomeScreen extends StatefulWidget {
   static const String route = '/home';
-  
+
   @override
   _MeetupHomeScreenState createState() => _MeetupHomeScreenState();
 }
