@@ -55,12 +55,8 @@ class _LoginScreenState extends State<LoginScreen> {
     widget._authApiService.login(_loginData).then((data) {
       _authBloc.dispatch(LoggedIn());
     }).catchError((error) {
-      _authBloc.dispatch(LoggedOut());
-      Scaffold.of(_scaffoldContext).showSnackBar(
-        SnackBar(
-          content: Text(error['errors']['message']),
-        ),
-      );
+      _authBloc.dispatch(LoggedOut(message:error['errors']['message']));
+
     });
   }
 

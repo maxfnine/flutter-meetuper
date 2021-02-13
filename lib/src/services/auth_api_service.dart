@@ -53,20 +53,27 @@ class AuthApiService {
     return false;
   }
 
-  Future<bool> isAuthenticated() async {
+  Future<Map<String,dynamic>> _decodedToken() async {
     final token = await this.token;
     if (token!=null && token.isNotEmpty) {
       final decodedToken = decode(token);
-      final bool isValidToken = decodedToken['exp'] * 1000 > DateTime.now().millisecond;
+      return decodedToken;
+    }
 
-      if (isValidToken) {
-        authUser = decodedToken;
-      }
+    return null;
+  }
 
-      return isValidToken;
+  Future<bool> isAuthenticated() async {
+    final decodedToken = await _decodedToken();
+    if (decodedToken!=null) {
+      return decodedToken['exp'] * 1000 > DateTime.now().millisecond;
     }
 
     return false;
+  }
+
+  void initUserFromToken() async{
+    authUser = await _decodedToken();
   }
 
   Future<void> _removeAuthData() async {
@@ -84,6 +91,20 @@ class AuthApiService {
     catch(error){
       print(error);
       return false;
+    }
+  }
+
+  Future<User> fetchAuthUser() async{
+    try{
+      final token = await this.token;
+      final response = await http.get('$url/users/me',headers: {'Authorization':'Bearer $token'});
+      final decodedBody = Map<String,dynamic>.from(json.decode(response.body));
+      await _saveToken(decodedBody['token']);
+      authUser=decodedBody;
+      return authUser;
+    }catch(error){
+      await _removeAuthData();
+      throw Exception('Cannot fetch user');
     }
   }
 

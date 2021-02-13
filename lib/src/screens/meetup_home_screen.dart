@@ -82,7 +82,8 @@ class _MeetupTitle extends StatelessWidget {
                   style: TextStyle(color: Theme.of(context).primaryColor),
                 ),
                 onTap: (){
-                  _authApiService.logout().then((isLogout) =>authBloc.dispatch(LoggedOut()));
+                  print('Logout');
+                  _authApiService.logout().then((isLogout) =>authBloc.dispatch(LoggedOut(message:'You have been successfully logged out')));
                   // _authApiService.logout().then((value) => Navigator.pushNamedAndRemoveUntil(context, LoginScreen.route, (route) => false),);
                   },
               )
@@ -160,7 +161,7 @@ class _MeetupCard extends StatelessWidget {
 }
 
 class _MeetupList extends StatelessWidget {
-  _MeetupList();
+
 
   Widget build(BuildContext context) {
     return Expanded(

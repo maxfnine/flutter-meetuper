@@ -1,4 +1,5 @@
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:io' show Platform;
 import '../models/meetup.dart';
@@ -21,5 +22,29 @@ class MeetupApiService{
   Future<Meetup> fetchMeetupById(String meetupId) async{
     final response = await http.get('$url/meetups/$meetupId');
     return Meetup.fromJSON(json.decode(response.body));
+  }
+
+  Future<bool> joinMeetup(String meetupId) async{
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String token = prefs.getString('token');
+      await http.post('$url/meetups/$meetupId/join',
+          headers: {'Authorization': 'Bearer $token'});
+      return true;
+    }catch(e){
+      throw Exception('Cannot join meetup!');
+    }
+  }
+
+  Future<bool> leaveMeetup(String meetupId) async{
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      final String token = prefs.getString('token');
+      await http.post('$url/meetups/$meetupId/leave',
+          headers: {'Authorization': 'Bearer $token'});
+      return true;
+    }catch(e){
+      throw Exception('Cannot leave meetup!');
+    }
   }
 }

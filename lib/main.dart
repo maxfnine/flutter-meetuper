@@ -51,9 +51,8 @@ class _MeetuperAppState extends State<MeetuperApp> {
       home: StreamBuilder<AuthenticationState>(
         stream: authBloc.authState,
         initialData: AuthenticationUnauthenticated(),
-        builder: (BuildContext context,
-            AsyncSnapshot<AuthenticationState> snapshot) {
-          final AuthenticationState state = snapshot.data;
+        builder: (BuildContext context, AsyncSnapshot<AuthenticationState> snapshot) {
+          final state = snapshot.data;
 
           if (state is AuthenticationUninitialized) {
             return SplashScreen();
@@ -61,14 +60,16 @@ class _MeetuperAppState extends State<MeetuperApp> {
 
           if (state is AuthenticationAuthenticated) {
             return BlocProvider<MeetupBloc>(
-                child: MeetupHomeScreen(), bloc: MeetupBloc());
+                bloc: MeetupBloc(),
+                child: MeetupHomeScreen()
+            );
           }
 
           if (state is AuthenticationUnauthenticated) {
-            final LoginScreenArguments arguments = !state.logout
-                ? ModalRoute.of(context).settings.arguments
-                : null;
-            return LoginScreen(message: arguments?.message);
+            final LoginScreenArguments arguments = ModalRoute.of(context).settings.arguments;
+            final message = state.message ?? arguments?.message;
+            state.message = null;
+            return LoginScreen(message: message);
           }
 
           if (state is AuthenticationLoading) {
@@ -92,7 +93,7 @@ class _MeetuperAppState extends State<MeetuperApp> {
       onGenerateRoute: (RouteSettings settings) {
         if (settings.name == MeetupDetailScreen.route) {
           final MeetupDetailArguments arguments = settings.arguments;
-          print(arguments);
+          // print(arguments);
           return MaterialPageRoute(
             builder: (context) => BlocProvider<MeetupBloc>(
               bloc: MeetupBloc(),

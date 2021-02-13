@@ -172,7 +172,7 @@ class RegisterScreenState extends State<RegisterScreen> {
         children: <Widget>[
           GestureDetector(
             onTap: () {
-              Navigator.pushNamed(context, LoginScreen.route);
+              Navigator.pushNamedAndRemoveUntil(context,LoginScreen.route ,(route) => false);
             },
             child: Text(
               'Already Registered? Login Now.',

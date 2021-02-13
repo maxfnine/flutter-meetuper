@@ -32,9 +32,10 @@ class AuthBloc extends BlocBase {
 
   Stream<AuthenticationState> _authStream(AuthenticationEvent event) async* {
     if (event is AppStarted) {
-      final bool isAuth = await auth.isAuthenticated();
+      final bool isAuth = await auth.isAuthenticated().catchError((error){dispatch(LoggedOut());});
 
       if (isAuth) {
+        await auth.fetchAuthUser();
         yield AuthenticationAuthenticated();
       } else {
         yield AuthenticationUnauthenticated();
@@ -50,7 +51,7 @@ class AuthBloc extends BlocBase {
     }
 
     if (event is LoggedOut) {
-      yield AuthenticationUnauthenticated(logout: true);
+      yield AuthenticationUnauthenticated(message: event.message);
     }
   }
 
