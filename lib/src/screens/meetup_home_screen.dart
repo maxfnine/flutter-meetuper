@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_meetuper/src/blocs/auth_bloc/auth_bloc.dart';
 import 'package:flutter_meetuper/src/blocs/meetup_bloc.dart';
+import 'package:flutter_meetuper/src/screens/meetup_create_screen.dart';
 import 'package:flutter_meetuper/src/screens/meetup_detail_screen.dart';
 import '../models/meetup.dart';
 import '../blocs/bloc_provider.dart';
@@ -45,7 +46,9 @@ class _MeetupHomeScreenState extends State<MeetupHomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () {},
+        onPressed: () {
+          Navigator.pushNamed(context, MeetupCreateScreen.route);
+        },
       ),
     );
   }
@@ -82,9 +85,7 @@ class _MeetupTitle extends StatelessWidget {
                   style: TextStyle(color: Theme.of(context).primaryColor),
                 ),
                 onTap: (){
-                  print('Logout');
                   _authApiService.logout().then((isLogout) =>authBloc.dispatch(LoggedOut(message:'You have been successfully logged out')));
-                  // _authApiService.logout().then((value) => Navigator.pushNamedAndRemoveUntil(context, LoginScreen.route, (route) => false),);
                   },
               )
             ],

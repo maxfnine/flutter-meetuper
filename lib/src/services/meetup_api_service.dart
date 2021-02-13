@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:io' show Platform;
 import '../models/meetup.dart';
+import '../models/category.dart';
 class MeetupApiService{
   static final MeetupApiService _singleton = MeetupApiService._internal();
   final String url=Platform.isIOS?'http://localhost:3001/api/v1':'http://10.100.102.21:3001/api/v1';
@@ -46,5 +47,11 @@ class MeetupApiService{
     }catch(e){
       throw Exception('Cannot leave meetup!');
     }
+  }
+
+  Future<List<Category>> fetchCategories() async{
+    final response=await http.get('$url/categories');
+    final List decodedBody = json.decode(response.body);
+    return decodedBody.map((category) =>Category.fromJSON(category)).toList();
   }
 }
