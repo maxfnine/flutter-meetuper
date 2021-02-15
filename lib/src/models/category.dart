@@ -8,4 +8,9 @@ class Category {
         this.name = parsedJson['name'] ?? '',
         this.image = parsedJson['image'] ?? '';
 
+  @override
+  String toString(){
+    return this.name;
+  }
+
 }

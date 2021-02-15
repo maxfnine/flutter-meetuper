@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import '../utils/generate_times.dart';
+import '../widgets/select_input.dart';
 import 'package:flutter_meetuper/src/models/forms.dart';
 import 'package:flutter_meetuper/src/services/meetup_api_service.dart';
 import '../models/category.dart';
@@ -16,6 +19,7 @@ class MeetupCreateScreenState extends State<MeetupCreateScreen> {
   BuildContext _scaffoldContext;
   MeetupFormData _meetupFormData = MeetupFormData();
   List<Category> _categories = [];
+  final List<String> _times=generateTimes();
 
   @override
   void initState() {
@@ -26,6 +30,18 @@ class MeetupCreateScreenState extends State<MeetupCreateScreen> {
     });
 
     super.initState();
+  }
+
+  void _handleDateChange(DateTime selectedDate){
+    _meetupFormData.startDate=selectedDate;
+  }
+
+  void _handleTimeFromChange(String selectedTime){
+    _meetupFormData.timeFrom=selectedTime;
+  }
+
+  void _handleTimeToChange(String selectedTime){
+    _meetupFormData.timeTo=selectedTime;
   }
 
   @override
@@ -63,6 +79,7 @@ class MeetupCreateScreenState extends State<MeetupCreateScreen> {
     if (form.validate()) {
       form.save();
       print(_meetupFormData.toJSON());
+      print(_meetupFormData.startDate);
     }
   }
 
@@ -94,18 +111,8 @@ class MeetupCreateScreenState extends State<MeetupCreateScreen> {
             ),
             onSaved: (value) => _meetupFormData.title = value,
           ),
-          TextFormField(
-            style: Theme
-                .of(context)
-                .textTheme
-                .headline,
-            inputFormatters: [LengthLimitingTextInputFormatter(30)],
-            decoration: InputDecoration(
-              hintText: 'Start Date',
-            ),
-            onSaved: (value) => _meetupFormData.startDate = value,
-          ),
-          _CategorySelect(categories: _categories, meetupFormData: _meetupFormData),
+          _DatePicker(onDateChange: _handleDateChange,),
+          SelectInput<Category>(onChange: (Category category)=>_meetupFormData.category=category, items: _categories),
           TextFormField(
             style: Theme
                 .of(context)
@@ -139,28 +146,8 @@ class MeetupCreateScreenState extends State<MeetupCreateScreen> {
             ),
             onSaved: (value) => _meetupFormData.description = value,
           ),
-          TextFormField(
-            style: Theme
-                .of(context)
-                .textTheme
-                .headline,
-            inputFormatters: [LengthLimitingTextInputFormatter(30)],
-            decoration: InputDecoration(
-              hintText: 'Time From',
-            ),
-            onSaved: (value) => _meetupFormData.timeFrom = value,
-          ),
-          TextFormField(
-            style: Theme
-                .of(context)
-                .textTheme
-                .headline,
-            inputFormatters: [LengthLimitingTextInputFormatter(30)],
-            decoration: InputDecoration(
-              hintText: 'Time To',
-            ),
-            onSaved: (value) => _meetupFormData.timeTo = value,
-          ),
+          SelectInput(onChange: _handleTimeFromChange, items: _times,label: 'Time From',),
+          SelectInput(onChange: _handleTimeToChange, items: _times,label: 'Time To',),
           _buildSubmitBtn()
         ],
       ),
@@ -195,40 +182,59 @@ class MeetupCreateScreenState extends State<MeetupCreateScreen> {
   }
 }
 
-class _CategorySelect extends StatelessWidget {
-  final List<Category> categories;
-  final MeetupFormData meetupFormData;
+class _DatePicker extends StatefulWidget {
+  final Function(DateTime) onDateChange;
+  _DatePicker({@required this.onDateChange});
+  @override
+  _DatePickerState createState() => _DatePickerState();
+}
 
-  _CategorySelect({@required this.categories,
-    @required this.meetupFormData});
+class _DatePickerState extends State<_DatePicker> {
+  DateTime _dateNow = DateTime.now();
+  DateTime _initialDate = DateTime.now();
+  final TextEditingController _dateController = TextEditingController();
+  final _dateFormat = DateFormat('dd/MM/yyyy');
 
+  _DatePickerState(){
+    _dateController.text=_dateFormat.format(_initialDate);
+  }
+
+  Future<Null> _selectDate(BuildContext context) async {
+    final DateTime picked = await showDatePicker(
+        context: context,
+        initialDate: _initialDate,
+        firstDate: _dateNow,
+        lastDate: DateTime(_dateNow.year + 1, _dateNow.month, _dateNow.day));
+    if (picked != null && picked != _initialDate)
+      widget.onDateChange(picked);
+      setState(() {
+        _dateController.text=_dateFormat.format(picked);
+        _initialDate = picked;
+      }
+      );
+  }
+  @override
   Widget build(BuildContext context) {
-    return FormField<Category>(
-      builder: (FormFieldState<Category> state) {
-        return InputDecorator(
-          decoration: InputDecoration(
-            icon: const Icon(Icons.color_lens),
-            labelText: 'Category',
-          ),
-          isEmpty: meetupFormData.category == null,
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<Category>(
-              value: meetupFormData.category,
-              isDense: true,
-              onChanged: (Category newCategory) {
-                meetupFormData.category = newCategory;
-                state.didChange(newCategory);
-              },
-              items: categories.map((Category category) {
-                return DropdownMenuItem<Category>(
-                  value: category,
-                  child: Text(category.name),
-                );
-              }).toList(),
+    return Row(children: <Widget>[
+      Expanded(
+          child: new TextFormField(
+            enabled: false,
+            decoration: new InputDecoration(
+              icon: const Icon(Icons.calendar_today),
+              hintText: 'Enter date when meetup starts',
+              labelText: 'Dob',
             ),
-          ),
-        );
-      },
-    );
+            controller: _dateController,
+            keyboardType: TextInputType.datetime,
+          )),
+      IconButton(
+        icon: new Icon(Icons.more_horiz),
+        tooltip: 'Choose date',
+        onPressed: (() {
+          _selectDate(context);
+        }),
+      )
+    ]);
   }
 }
+
