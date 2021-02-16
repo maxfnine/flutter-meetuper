@@ -13,4 +13,7 @@ class Category {
     return this.name;
   }
 
+  Map<String,dynamic> toJSON()=>{'_id':this.id,'name':this.name,'image':this.image};
+
+
 }
