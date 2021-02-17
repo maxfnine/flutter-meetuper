@@ -6,8 +6,12 @@ import 'package:flutter_meetuper/src/blocs/user_bloc/state.dart';
 import 'package:flutter_meetuper/src/blocs/user_bloc/user_bloc.dart';
 import 'package:flutter_meetuper/src/services/auth_api_service.dart';
 import 'package:flutter_meetuper/src/services/meetup_api_service.dart';
+import 'package:flutter_meetuper/src/widgets/thread_list.dart';
 import '../widgets/bottom_navigation.dart';
 import '../models/meetup.dart';
+enum Views{
+  detailView,threadView,peopleView
+}
 
 class MeetupDetailScreen extends StatefulWidget {
   static const String route = '/meetupDetail';
@@ -24,6 +28,7 @@ class _MeetupDetailScreenState extends State<MeetupDetailScreen> {
   MeetupBloc _meetupBloc;
   UserBloc _userBloc;
   Meetup _meetup;
+  int screenIndex=0;
 
   void initState() {
     _meetupBloc = BlocProvider.of<MeetupBloc>(context);
@@ -44,6 +49,10 @@ class _MeetupDetailScreenState extends State<MeetupDetailScreen> {
     _meetupBloc.leaveMeetup(_meetup);
   }
 
+  bool _isActiveView(Views view){
+    return view.index==screenIndex;
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<UserState>(
@@ -55,39 +64,54 @@ class _MeetupDetailScreenState extends State<MeetupDetailScreen> {
             appBar: AppBar(
               title: Text('Meetup Details'),
             ),
-            body: StreamBuilder(
-              stream: _meetupBloc.meetup,
-              builder: (BuildContext context, AsyncSnapshot<Meetup> snapshot) {
-                if (snapshot.hasData) {
-                  final Meetup meetup = snapshot.data;
-                  return ListView(children: [
-                    HeaderSection(
-                      meetup,
-                    ),
-                    TitleSection(
-                      meetup,
-                    ),
-                    AdditionalInfoSectionSection(
-                      meetup,
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(32.0),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                            'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer purus leo, vulputate pellentesque augue eleifend, semper porta orci. Quisque vestibulum vitae nisl in maximus. Donec varius rutrum risus. Mauris quis lectus suscipit, viverra urna ut, euismod nunc. Praesent magna mauris, sagittis sed dolor vel, accumsan accumsan purus. Vivamus molestie tempus sem, eu condimentum lorem scelerisque sed. Phasellus metus enim, tristique vitae tempor semper, lacinia ac libero. Vivamus congue ex id turpis fringilla fermentum. In tristique vehicula aliquet.'),
-                      ),
-                    ),
-                  ]);
-                } else {
-                  return Container(
-                    width: 0.0,
-                    height: 0.0,
-                  );
-                }
-              },
-            ),
-            bottomNavigationBar: BottomNavigation(),
+            body:
+            Builder(builder: (BuildContext context){
+              if(_isActiveView(Views.detailView)){
+                return StreamBuilder(
+                  stream: _meetupBloc.meetup,
+                  builder: (BuildContext context, AsyncSnapshot<Meetup> snapshot) {
+                    if (snapshot.hasData) {
+                      final Meetup meetup = snapshot.data;
+                      return ListView(children: [
+                        HeaderSection(
+                          meetup,
+                        ),
+                        TitleSection(
+                          meetup,
+                        ),
+                        AdditionalInfoSectionSection(
+                          meetup,
+                        ),
+                        Padding(
+                          padding: EdgeInsets.all(32.0),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                                'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer purus leo, vulputate pellentesque augue eleifend, semper porta orci. Quisque vestibulum vitae nisl in maximus. Donec varius rutrum risus. Mauris quis lectus suscipit, viverra urna ut, euismod nunc. Praesent magna mauris, sagittis sed dolor vel, accumsan accumsan purus. Vivamus molestie tempus sem, eu condimentum lorem scelerisque sed. Phasellus metus enim, tristique vitae tempor semper, lacinia ac libero. Vivamus congue ex id turpis fringilla fermentum. In tristique vehicula aliquet.'),
+                          ),
+                        ),
+                      ]);
+                    } else {
+                      return Container(
+                        width: 0.0,
+                        height: 0.0,
+                      );
+                    }
+                  },
+                );
+              }
+
+              if(_isActiveView(Views.threadView)){
+                _meetupBloc.fetchThreads(_meetup.id);
+                return ThreadList(bloc: _meetupBloc,);
+              }
+
+              if(_isActiveView(Views.peopleView)){
+                return Center(child: Text('I\'m People View!'),);
+              }
+            },),
+            bottomNavigationBar:
+            BottomNavigation(userState: userState,onChange:(index)=>setState(()=>screenIndex=index),currentIndex: screenIndex,),
             floatingActionButton: _MeetupActionButton(
               userState: userState,
               joinMeetup: _joinMeetup,

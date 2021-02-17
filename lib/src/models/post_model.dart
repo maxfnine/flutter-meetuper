@@ -1,20 +1,21 @@
-import 'package:scoped_model/scoped_model.dart';
 import 'package:faker/faker.dart';
-import '../services/post_api_provider.dart';
-import '../models/post.dart';
+import 'package:flutter_meetuper/src/models/post.dart';
+import 'package:flutter_meetuper/src/services/post_api_provider.dart';
+import 'package:scoped_model/scoped_model.dart';
 
 class PostModel extends Model {
-  List<Post> posts=[];
-  final PostApiProvider _api = PostApiProvider();
+  List<Post> posts = [];
   final testingState = 'Testing State';
 
-  PostModel(){
+  final PostApiProvider _api = PostApiProvider();
+
+  PostModel() {
     _fetchPosts();
   }
 
-  _fetchPosts() async {
-    posts = await _api.fetchPosts();
-    this.posts=posts;
+  void _fetchPosts() async {
+    List<Post> posts = await _api.fetchPosts();
+    this.posts = posts;
     notifyListeners();
   }
 
@@ -23,6 +24,7 @@ class PostModel extends Model {
     final title = faker.food.dish();
     final body = faker.food.cuisine();
     final newPost = Post(text: title, body: body, id: id);
+
     posts.add(newPost);
     notifyListeners();
   }

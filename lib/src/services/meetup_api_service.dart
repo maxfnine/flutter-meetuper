@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 import '../models/meetup.dart';
 import '../models/category.dart';
+import '../models/thread.dart';
 class MeetupApiService{
   static final MeetupApiService _singleton = MeetupApiService._internal();
   final String url=Platform.isIOS?'http://localhost:3001/api/v1':'http://10.100.102.21:3001/api/v1';
@@ -40,6 +41,13 @@ class MeetupApiService{
     } else {
       return Future.error(res.body);
     }
+  }
+
+  Future<List<Thread>> fetchThreads(String meetupId) async {
+    final res = await http.get('$url/threads?meetupId=$meetupId');
+    final Map<String, dynamic> parsedBody = json.decode(res.body);
+    List<dynamic> parsedThreads = parsedBody['threads'];
+    return parsedThreads.map((val) => Thread.fromJSON(val)).toList();
   }
 
 
