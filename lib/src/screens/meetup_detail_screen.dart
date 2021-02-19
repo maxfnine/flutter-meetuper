@@ -6,6 +6,7 @@ import 'package:flutter_meetuper/src/blocs/user_bloc/state.dart';
 import 'package:flutter_meetuper/src/blocs/user_bloc/user_bloc.dart';
 import 'package:flutter_meetuper/src/services/auth_api_service.dart';
 import 'package:flutter_meetuper/src/services/meetup_api_service.dart';
+import 'package:flutter_meetuper/src/widgets/joined_people_list.dart';
 import 'package:flutter_meetuper/src/widgets/thread_list.dart';
 import '../widgets/bottom_navigation.dart';
 import '../models/meetup.dart';
@@ -107,7 +108,8 @@ class _MeetupDetailScreenState extends State<MeetupDetailScreen> {
               }
 
               if(_isActiveView(Views.peopleView)){
-                return Center(child: Text('I\'m People View!'),);
+                return JoinedPeopleList(bloc: _meetupBloc,);
+                // return Center(child: Text('I\'m People View!'),);
               }
             },),
             bottomNavigationBar:
